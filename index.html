@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>INFO5100-Project3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/d3-fetch.v2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-color@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-dispatch@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-quadtree@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-timer@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-force@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-dispatch@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-selection@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-drag@3"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+</head>
+
+<style>
+    body {
+        background-color: #272b30;
+        padding: 30px 40px;
+        text-align: center;
+    }
+
+    #control_area{
+        margin-left: 40px;
+        color: white;
+    }
+
+    .links line {
+        stroke: rgb(240, 240, 240);
+        stroke-opacity: 0.2;
+    }
+
+    .links line.inactive {
+        stroke-opacity: 0;
+    }
+
+    .nodes circle {
+        stroke: #fff;
+        stroke-width: 1.5px;
+    }
+
+    .nodes circle:hover {
+        cursor: pointer;
+    }
+
+    .nodes circle.inactive {
+        display: none !important;
+    }
+
+    #info_area {
+        position: absolute;
+        bottom: 40px;
+        right: 30px;
+        text-align: right;
+        width: 270px;
+    }
+
+    #info_area h4 {
+        color: #fff;
+    }
+
+    #info_area p {
+        color: #fff;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    #info_area p span {
+        color: #888;
+        margin-right: 10px;
+    }
+</style>
+
+
+
+<body>
+
+    <h1 style="color:#fff;font-size:32px;margin-bottom:0px;text-align:left;margin-left:40px;">Star Wars</h1>
+
+    <div id="control_area"> 
+        <input type="checkbox" checked id="characters" name="category_checkbox" value="characters">
+        <label for="characters"> Characters</label>
+        <input type="checkbox" id="planets" name="category_checkbox" value="planets">
+        <label for="planets"> Planets</label>
+        <input type="checkbox" id="starships" name="category_checkbox" value="starships">
+        <label for="characters"> Starships</label>
+        <input type="checkbox" id="vehicles" name="category_checkbox" value="vehicles">
+        <label for="characters"> Vehicles</label>
+        <input type="checkbox" id="species" name="category_checkbox" value="species">
+        <label for="characters"> Species</label>
+    </div> 
+
+    <div id="graph_area" style="text-align:center;">
+        <svg id="graph" height="1000" width="1000"></svg>
+    </div>
+      
+    <div id="info_area"><h4> </h4> </div>
+
+    <script>
+        var node_info_data, graph_data; // data objects
+        var link, node; // svg objects
+
+        var svg = d3.select("#graph"),   // svg object
+            width = svg.attr("width"),
+            height = svg.attr("height"); // svg size
+
+        var selected_categories = ['film', 'character'];
+        var categories = ['film', 'character', 'planet', 'starship', 'vehicle', 'specie'];
+        var colors = ['#6ca46c', '#4e88af', '#ca635f', '#d2907c', '#d6744d', '#ded295'];
+
+        // create a force layout
+        var simulation = d3.forceSimulation()
+
+        ///////////////////// Load Data ////////////////////////////////////////
+        d3.json("all.json").then((data) => {
+            node_info_data = data;
+            console.log(node_info_data);
+        })
+
+        d3.json("./starwar.json").then((data) => {
+            graph_data = data;
+            console.log(graph_data);
+            console.log(graph_data.links);
+            initializeDisplay();
+            initializeSimulation();
+
+        });
+
+        
+
+        ///////////////////// SVG Objects //////////////////////////////////////
+        function initializeDisplay() {
+            link = svg.append("g").attr("class", "links").selectAll("line")
+                .data(graph_data.links)
+                .enter().append("line")
+                .attr("stroke-width", 1)
+                .attr("class", (d)=>{
+                    //console.log(d);
+                    //console.log(d.source)
+                })
+       
+        
+            node = svg.append("g").attr("class", "nodes").selectAll("circle")
+                .data(graph_data.nodes).enter().append("circle")
+                .attr("r", (d) => d.size)
+                .attr("fill", (d) => colors[d.group])
+                .attr('name', (d) => d.id)
+                .attr('class', (d) =>{
+                    if(selected_categories.includes(d.class)){
+                        return 'active';
+                    }
+                    else{
+                        return 'inactive';
+                    }
+                })
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+
+        }
+        ///////////////////// Simulation Configuration /////////////////////////
+        function initializeSimulation() {
+            initializeForces();
+            simulation.nodes(graph_data.nodes).on("tick", ticked);
+            simulation.force("link").links(graph_data.links);
+        }
+
+        function initializeForces() {
+            simulation.force("link", d3.forceLink().id((d) => d.id))
+                .force("charge", d3.forceManyBody())
+                .force("center", d3.forceCenter(width / 2, height / 2));
+        }
+
+        function ticked() {
+            link.attr("x1", (d) => d.source.x)
+                .attr("y1", (d) => d.source.y)
+                .attr("x2", (d) => d.target.x)
+                .attr("y2", (d) => d.target.y)
+
+            node.attr("cx", (d) => d.x)
+                .attr("cy", (d) => d.y);
+
+        }
+
+        ///////////////////// Drag EVENTS //////////////////////////////////////
+        var is_dragging = false;
+
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+            is_dragging = true;
+        }
+
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+            is_dragging = false;
+        }
+
+        ///////////////////// Jquery Code //////////////////////////////////////
+        $('#graph').on('mouseenter', '.nodes circle', function (event) {
+            if (!is_dragging) {
+                var name = $(this).attr('name');
+
+                $('#info_area h4').css('color', $(this).attr('fill')).text(name);
+                $('#info_area p').remove();
+                for (var key in node_info_data[name]) {
+                    if (typeof (node_info_data[name][key]) == 'object') {
+                        continue;
+                    }
+                    if (key == 'url' || key == 'title' || key == 'name' || key == 'edited' || key == 'created' || key == 'homeworld') {
+                        continue;
+                    }
+                    $('#info_area').append('<p><span>' + key + '</span>' + node_info_data[name][key] + '</p>');
+                }
+
+                d3.select('#graph .nodes').selectAll('circle').attr('class', function (d) {
+                    if(d)
+                    if (d.id == name ) {
+                        return '';
+                    }
+
+                    for (var i = 0; i < graph_data.links.length; i++) {
+                        if (graph_data.links[i]['source'].id == name && graph_data.links[i]['target'].id == d.id) {
+                            return '';
+                        }
+                        if (graph_data.links[i]['target'].id == name && graph_data.links[i]['source'].id == d.id) {
+                            return '';
+                        }
+                    }
+                    return 'inactive';
+                });
+                d3.select("#graph .links").selectAll('line').attr('class', function (d) {
+
+                    if (d.source.id == name || d.target.id == name) {
+                        return '';
+                    } else {
+                        return 'inactive';
+                    }
+                });
+            }
+        });
+
+        $('#graph').on('mouseleave', '.nodes circle', function (event) {
+            if (!is_dragging) {
+                d3.select('#graph .nodes').selectAll('circle').attr('class', '');
+                d3.select('#graph .links').selectAll('line').attr('class', '');
+            }
+        });
+
+        $('input[type=checkbox][name=category_checkbox]').change(function() {
+            if (this.checked) {
+                selected_categories.push(this.value);
+                console.log(selected_categories);
+            }
+            else {
+                selected_categories.splice(selected_categories.indexOf(this.value), 1);
+                console.log(selected_categories);
+            }
+        });
+
+
+
+    </script>
+</body>
+
+</html>
