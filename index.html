@@ -22,18 +22,19 @@
 <style>
     body {
         background-color:black;
-        padding: 20px 40px;
+        padding: 10px 40px;
         text-align: center;
         background-image: url("background.png");
         filter:"progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='scale')";  
--moz-background-size:100% 100%;  
-    background-size:100% 100%; 
+        -moz-background-size:100% 100%;  
+        background-size:100% 100%; 
 
     }
 
     #control_area{
         margin-left: 40px;
         color: white;
+        font-size: 20px;
     }
 
     .links line {
@@ -89,8 +90,8 @@
     <img src="./logo.png" width="400" height="242"/>
 
     <div id="control_area"> 
-        <input type="checkbox" checked id="films" name="category_checkbox" onclick="return false;" value="film">
-        <label for="films" style="color:#1a652f"> Films</label>
+        <!-- <input type="checkbox" checked id="films" name="category_checkbox" onclick="return false;" value="film"> -->
+        <label  style="color:#1a652f"> Films</label>
 
         <input type="checkbox" checked id="characters" name="category_checkbox" value="character">
         <label for="characters" style="color:#5fa0dd"> Characters</label>
@@ -109,7 +110,7 @@
     </div> 
 
     <div id="graph_area" style="text-align:center;">
-        <svg id="graph" height="1000" width="1000"></svg>
+        <svg id="graph" height="1000" width="1800"></svg>
     </div>
       
     <div id="info_area"><h4> </h4> </div>
@@ -197,7 +198,7 @@
             simulation.force("link", d3.forceLink().id((d) => d.id))
                 .force("charge", d3.forceManyBody().strength(-80))
                 .force("center", d3.forceCenter(width / 2, height / 2))
-                .force("collide", d3.forceCollide().radius(5).strength(0.5));
+                .force("collide", d3.forceCollide(110).radius((d) => d.size).strength(0.7));
         }
 
         function ticked() {
