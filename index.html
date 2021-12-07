@@ -21,9 +21,14 @@
 
 <style>
     body {
-        background-color: #272b30;
-        padding: 30px 40px;
+        background-color:black;
+        padding: 20px 40px;
         text-align: center;
+        background-image: url("background.png");
+        filter:"progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='scale')";  
+-moz-background-size:100% 100%;  
+    background-size:100% 100%; 
+
     }
 
     #control_area{
@@ -81,7 +86,9 @@
 
 <body>
 
-    <h1 style="color:#fff;font-size:32px;margin-bottom:0px;text-align:left;margin-left:40px;">Star Wars</h1>
+    <!-- <h1 style="color:#fff;font-size:32px;margin-bottom:0px;text-align:left;margin-left:40px;">Star Wars</h1> -->
+
+    <img src="./logo.png" width="400" height="242"/>
 
     <div id="control_area"> 
         <input type="checkbox" checked id="characters" name="category_checkbox" value="characters">
