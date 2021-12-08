@@ -38,7 +38,7 @@
     }
 
     .links line {
-        stroke: rgb(240, 240, 240);
+        stroke: rgb(255, 255, 255);
         stroke-opacity: 0.2;
     }
 
@@ -59,10 +59,13 @@
 
     #info_area {
         position: absolute;
-        top: 50%;
-        right: 50px;
-        text-align: right;
+        top: 450px;
+        left: 250px;
+        text-align: left;
         width: 270px;
+        font-family: "Andale Mono";
+        background-color: #1f1f1f;
+        visibility: hidden;
     }
 
     #info_area h4 {
@@ -237,8 +240,9 @@
         $('#graph').on('mouseenter', '.nodes circle', function (event) {
             if (!is_dragging) {
                 var name = $(this).attr('name');
-
-                $('#info_area h4').css('color', $(this).attr('fill')).text(name);
+                d3.select("#info_area").style('visibility', 'visible');
+                var objDatum = d3.select(this).datum();
+                $('#info_area h4').css('color', $(this).attr('fill')).text(`${objDatum.class}: ${name}`);
                 $('#info_area p').remove();
                 for (var key in node_info_data[name]) {
                     if (typeof (node_info_data[name][key]) == 'object') {
@@ -281,6 +285,8 @@
 
         $('#graph').on('mouseleave', '.nodes circle', function (event) {
             if (!is_dragging) {
+                d3.select("#info_area").style("visibility", "hidden");
+                
                 d3.select('#graph .nodes').selectAll('circle').attr('class', (d) => {
                     if(!selected_categories.includes(d.class)){
                         return 'inactive';
